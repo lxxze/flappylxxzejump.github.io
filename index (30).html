@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flappy Bird</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: #333;
+            font-family: Arial, sans-serif;
+        }
+        #game-container {
+            position: relative;
+            width: 400px;
+            height: 600px;
+            overflow: hidden;
+            background: url('https://media-hosting.imagekit.io//31c2bfae89404889/OIP%20(12).jpg?Expires=1735604186&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=ah8f5yn3HjcPnVG3lN3DofcLDJyypMvEQGkls4usUznrplvyxxNwsf-6b5Uiqw0mzJyKILc8rjUjLDxQlhivyslKDyjRH9kuIPmcsnLXzF7XrfVc4a42l0RYwWTYXWsedtmt96diS8WobAvWy2VCftkPa4MxXLLcz7qIrdZPGC2FXFCGwDxK2KYlug0R6GU5QUdHhMGnfZ83nv3oqhaBXUQcYE34-tgFR~4k9NdqootUHPkuPmk9wPX1gPvhRvQ43C5sG3zAkU2ZvRneyZTiEuobqSBCz8GjJc89ExvuaxgLfsoNecH7Cu0Jlb4C7ZeM1oyP~fyTGRvPQe2lL9NflA__');
+        }
+        #bird {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            left: 50px;
+            top: 300px;
+            transition: transform 0.1s;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            z-index: 10;
+        }
+        .pipe {
+            position: absolute;
+            width: 60px;
+            z-index: 5;
+        }
+        .pipe.top {
+            display: flex;
+            flex-direction: column;
+        }
+        .pipe.bottom {
+            display: flex;
+            flex-direction: column-reverse;
+        }
+        .pipe-eraser {
+            height: 40px;
+            background-color: white;
+            border: 3px solid #d3d3d3;
+            border-bottom: none;
+        }
+        .pipe-metal {
+            height: 20px;
+            background: linear-gradient(to bottom, #A9A9A9, #808080);
+            border: 3px solid #696969;
+            border-top: none;
+            border-bottom: none;
+        }
+        .pipe-body {
+            flex-grow: 1;
+            background: black;
+            border: 3px solid #333;
+            border-top: none;
+        }
+        .money {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-image: url('https://media-hosting.imagekit.io//48f0cad2355f4d0c/Screenshot_2024-12-28_193117-removebg-preview.png?Expires=1735605214&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=UoQsmGohNL4Ptenn7VD5oec9tu7fhPHEdpXyTjBgVrrD8OVNfEmYu2WLLN9y9g3EzkU0JUIw9YKmJXA4NyqqVOr0uvSdzgUycXVD1P-KwcKP0BcF2e~D0uz5a6M4tgx-gF0DNgbv8liSRSdiz61khGU~ZzCI0OV3NzlL5jhmel4nWwEd5~GK4fxaXNykm4ZScG7GaX40Wufquw0M71a-~kw27kgJovsIjeWtj55lkQcpqqCvgJJuqNvwBbMMqP0Twyw37xI8oBzP8pmwmQ879oO3Mm5rCDTrHNTMeIWoMK6U0br~OW3Rhcn0CrERdf~JSDaMT4rTIV~pdjotNtcopg__');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            z-index: 15;
+        }
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 1000;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            text-shadow: 2px 2px 2px rgba(0,0,0,0.5);
+        }
+        #start-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            z-index: 1000;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            border: 2px solid rgba(255,255,255,0.3);
+            min-width: 200px;
+            line-height: 1.5;
+        }
+        .game-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.3);
+            z-index: 999;
+            display: none;
+        }
+        .game-overlay.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="score">Score: 0</div>
+        <img id="bird" src="https://media-hosting.imagekit.io//0f0ce650375e4704/Screenshot_2024-12-07_173121-removebg-preview%20(1).png?Expires=1735603454&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=0n4gTlHFtds07m9jhbE811ozAtB~TSlaRFZK35RykqoA63ufOk~eqSpypTJ7lA9bOD1d2e1Ui7NaYTW9XyYF3f3gaMZA8GjDFSEAoLhnAzMcAPkWjhvrU5u~nl7avP~iQHv6vO3bxRPdYnD2TeMFO5rBYlb4baogLJNC95RKGhzosOiOL1-PJ3XTikC8VUsdpHh9U5ScL9nux1Uwtbgm1DVCVJE1yhTyq2RA2SSjJYgp0aEn2VaVQN4BZUpffOjj2IMcTLYeaSPH8EjcxcengTjbDyuitY2SWrcfmu8TbAr~GFWUjU2Yc72oLk9BHB-mcNX-TG4SQIImNNFIztYJfA__" alt="Bird">
+        <div id="start-message">Press SPACE to start</div>
+    </div>
+
+    <script>
+        const gameContainer = document.getElementById('game-container');
+        const bird = document.getElementById('bird');
+        const scoreElement = document.getElementById('score');
+        const startMessage = document.getElementById('start-message');
+
+        let gameStarted = false;
+        let birdY = 300;
+        let velocity = 0;
+        let score = 0;
+        let pipes = [];
+        let moneyElements = [];
+        let gameLoop;
+        let lastPipePosition = 0;
+
+        function createPipe() {
+            const gap = 200;
+            const minHeight = 50;
+            const maxHeight = gameContainer.offsetHeight - gap - minHeight;
+            const topHeight = Math.random() * (maxHeight - minHeight) + minHeight;
+
+            const topPipe = document.createElement('div');
+            topPipe.className = 'pipe top';
+            topPipe.style.height = topHeight + 'px';
+            topPipe.style.left = '400px';
+            topPipe.style.top = '0';
+
+            const topEraser = document.createElement('div');
+            topEraser.className = 'pipe-eraser';
+            const topMetal = document.createElement('div');
+            topMetal.className = 'pipe-metal';
+            const topBody = document.createElement('div');
+            topBody.className = 'pipe-body';
+
+            topPipe.appendChild(topEraser);
+            topPipe.appendChild(topMetal);
+            topPipe.appendChild(topBody);
+
+            const bottomPipe = document.createElement('div');
+            bottomPipe.className = 'pipe bottom';
+            bottomPipe.style.height = (gameContainer.offsetHeight - topHeight - gap) + 'px';
+            bottomPipe.style.left = '400px';
+            bottomPipe.style.bottom = '0';
+
+            const bottomEraser = document.createElement('div');
+            bottomEraser.className = 'pipe-eraser';
+            const bottomMetal = document.createElement('div');
+            bottomMetal.className = 'pipe-metal';
+            const bottomBody = document.createElement('div');
+            bottomBody.className = 'pipe-body';
+
+            bottomPipe.appendChild(bottomEraser);
+            bottomPipe.appendChild(bottomMetal);
+            bottomPipe.appendChild(bottomBody);
+
+            gameContainer.appendChild(topPipe);
+            gameContainer.appendChild(bottomPipe);
+
+            lastPipePosition = topHeight + gap;
+            return { top: topPipe, bottom: bottomPipe, passed: false };
+        }
+
+        function createMoney() {
+            const money = document.createElement('div');
+            money.className = 'money';
+            money.style.left = '400px';
+            const randomOffset = Math.random() * 100 - 50;
+            const moneyY = Math.max(50, Math.min(550, lastPipePosition - 100 + randomOffset));
+            money.style.top = moneyY + 'px';
+            gameContainer.appendChild(money);
+            return money;
+        }
+
+        function checkCollision(pipe) {
+            const birdRect = bird.getBoundingClientRect();
+            const topPipeRect = pipe.top.getBoundingClientRect();
+            const bottomPipeRect = pipe.bottom.getBoundingClientRect();
+
+            return (
+                birdRect.right > topPipeRect.left &&
+                birdRect.left < topPipeRect.right && (
+                    birdRect.top < topPipeRect.bottom ||
+                    birdRect.bottom > bottomPipeRect.top
+                )
+            );
+        }
+
+        function updateGame() {
+            if (!gameStarted) return;
+
+            velocity += 0.5;
+            birdY += velocity;
+            bird.style.top = birdY + 'px';
+            bird.style.transform = `rotate(${velocity * 3}deg)`;
+
+            if (pipes.length === 0 || parseInt(pipes[pipes.length - 1].top.style.left) < 200) {
+                pipes.push(createPipe());
+                if (Math.random() < 0.5) {
+                    moneyElements.push(createMoney());
+                }
+            }
+
+            pipes.forEach((pipe, index) => {
+                const currentLeft = parseInt(pipe.top.style.left);
+                const newLeft = currentLeft - 2;
+                pipe.top.style.left = `${newLeft}px`;
+                pipe.bottom.style.left = `${newLeft}px`;
+
+                if (!pipe.passed && newLeft < 40) {
+                    pipe.passed = true;
+                    score++;
+                    scoreElement.textContent = `Score: ${score}`;
+                }
+
+                if (newLeft < -60) {
+                    gameContainer.removeChild(pipe.top);
+                    gameContainer.removeChild(pipe.bottom);
+                    pipes.splice(index, 1);
+                }
+
+                if (checkCollision(pipe)) {
+                    gameOver();
+                }
+            });
+
+            moneyElements.forEach((money, index) => {
+                const currentLeft = parseInt(money.style.left);
+                const newLeft = currentLeft - 2;
+                money.style.left = `${newLeft}px`;
+
+                const moneyRect = money.getBoundingClientRect();
+                const birdRect = bird.getBoundingClientRect();
+
+                if (
+                    birdRect.right > moneyRect.left &&
+                    birdRect.left < moneyRect.right &&
+                    birdRect.bottom > moneyRect.top &&
+                    birdRect.top < moneyRect.bottom
+                ) {
+                    score += 5;
+                    scoreElement.textContent = `Score: ${score}`;
+                    gameContainer.removeChild(money);
+                    moneyElements.splice(index, 1);
+                }
+
+                if (newLeft < -30) {
+                    gameContainer.removeChild(money);
+                    moneyElements.splice(index, 1);
+                }
+            });
+
+            if (birdY < 0 || birdY > gameContainer.offsetHeight - 40) {
+                gameOver();
+            }
+        }
+
+        function gameOver() {
+            gameStarted = false;
+            clearInterval(gameLoop);
+            startMessage.style.display = 'block';
+            startMessage.innerHTML = `Game Over!<br>Score: ${score}<br>Press SPACE to restart`;
+        }
+
+        function startGame() {
+            pipes.forEach(pipe => {
+                gameContainer.removeChild(pipe.top);
+                gameContainer.removeChild(pipe.bottom);
+            });
+            moneyElements.forEach(money => {
+                gameContainer.removeChild(money);
+            });
+
+            pipes = [];
+            moneyElements = [];
+            birdY = 300;
+            velocity = 0;
+            score = 0;
+            bird.style.top = birdY + 'px';
+            bird.style.transform = 'rotate(0deg)';
+            scoreElement.textContent = 'Score: 0';
+            startMessage.style.display = 'none';
+
+            gameStarted = true;
+            gameLoop = setInterval(updateGame, 20);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (!gameStarted) {
+                    startGame();
+                } else {
+                    velocity = -8;
+                }
+            }
+        });
+
+        document.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!gameStarted) {
+                startGame();
+            } else {
+                velocity = -8;
+            }
+        });
+    </script>
+</body>
+</html>                                                                                                                                             <iframe 
+    src="https://open.spotify.com/embed/playlist/7BahAz6TE6wagqS5m3w5Zb?autoplay=1" 
+    width="300" 
+    height="80" 
+    frameborder="0" 
+    allowtransparency="true" 
+    allow="autoplay; encrypted-media">
+</iframe>
